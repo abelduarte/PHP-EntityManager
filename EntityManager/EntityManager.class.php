@@ -217,9 +217,8 @@ class EntityManager
 		return new EntityQuery($sqlStatement);
 	}
 	
-	public function lock($tableName, $values, $criteria)
+	public function lock($tableName, $criteria)
 	{
-		$set = $this->buildSetClause($values);
 		$where = $this->buildWhereClause($criteria);
 		
 		// Lock the row

@@ -104,7 +104,7 @@ class Entity
 		if(!isset($criteria))
 			$criteria = array("id" => $this->getPrimaryKey());
 			
-		return $this->entityManager->lock($this->tableName, $this->object, $criteria);
+		return $this->entityManager->lock($this->tableName, $criteria);
 	}
 	
 	public function update($criteria = null)
