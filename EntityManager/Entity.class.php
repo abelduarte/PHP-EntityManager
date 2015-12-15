@@ -15,7 +15,27 @@ class Entity
 		$this->object = new stdClass();
 	}
 	
-	public function setEntityManager($entityManager){
+	public function __get($property) 
+   {
+        if (!property_exists($this, $property)) 
+        {
+            if(property_exists($this->object, $property))
+            {
+	            return $this->object->$property;
+            }
+        }
+    }
+
+    public function __set($property, $value) 
+    {
+        if (!property_exists($this, $property)) 
+        {
+            $this->object->$property = $value;
+        }
+    }
+	
+	public function setEntityManager($entityManager)
+	{
 		$this->entityManager = $entityManager;
 	}
 	
@@ -53,7 +73,17 @@ class Entity
 	
 	public function init($object)
 	{
-		$this->object = $object;
+		$this->object = (object)$object;
+	}
+	
+	public function setProperty($property, $value)
+	{
+		$this->object->$property = $value;
+	}
+	
+	public function getProperty($property)
+	{
+		return $this->object->$property;
 	}
 	
 	public function load()
@@ -67,6 +97,14 @@ class Entity
 		$this->setPrimaryKey($pk);
 		
 		return $pk;
+	}
+	
+	public function lock($criteria = null)
+	{
+		if(!isset($criteria))
+			$criteria = array("id" => $this->getPrimaryKey());
+			
+		return $this->entityManager->lock($this->tableName, $this->object, $criteria);
 	}
 	
 	public function update($criteria = null)

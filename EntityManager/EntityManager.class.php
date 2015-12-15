@@ -73,13 +73,13 @@ class EntityManager
 		}
 	}
 	
-	public function createManagedEntity($entityClass, $tableName = null)
+	public function createManagedEntity($tableName = null, $entityClass = "Entity")
 	{
 		$entity = new $entityClass($this, $tableName);
 		return $entity;
 	}
 	
-	public function getReference($entityClass, $pk, $tableName = null)
+	public function getReference($pk, $tableName = null, $entityClass = "Entity")
 	{	
 		$entity = new $entityClass($this, $tableName);
 		$entity->setEntityManager($this);
@@ -87,7 +87,7 @@ class EntityManager
 		return $entity;
 	}
 	
-	public function findOne($entityClass, $tableName, $criteria)
+	public function findOne($tableName, $criteria, $entityClass = "Entity")
 	{	
 		$where = $this->buildWhereClause($criteria);
 		
@@ -110,7 +110,7 @@ class EntityManager
 			$rows = $stm->fetchAll(PDO::FETCH_OBJ);
 			foreach($rows as $row)
 			{
-				$entity = new $entityClass($this);
+				$entity = new $entityClass($this, $tableName);
 				$entity->init($row);
 				
 				$primaryKeyName = $entity->getPrimaryKeyName();
@@ -125,8 +125,8 @@ class EntityManager
 		return null;
 	}
 	
-	public function findBy($entityClass, $tableName, $criteria, $offset, $limit){
-		
+	public function findBy($tableName, $criteria, $offset, $limit, $entityClass = "Entity")
+	{	
 		$where = $this->buildWhereClause($criteria);
 		
 		$sqlQuery = "SELECT * FROM ".$tableName." WHERE ".$where." LIMIT ".$offset.", ".$limit;
@@ -163,8 +163,8 @@ class EntityManager
 		return array();
 	}
 	
-	public function findAll($entityClass, $tableName = null, $criteria = null, $offset = 0, $count = 100){
-		
+	public function findAll($tableName = null, $criteria = null, $offset = 0, $count = 100, $entityClass = "Entity")
+	{	
 		$sqlQuery = "SELECT * FROM ".$tableName;
 		
 		if(isset($criteria))
@@ -217,7 +217,28 @@ class EntityManager
 		return new EntityQuery($sqlStatement);
 	}
 	
-	public function update($tableName, $values, $criteria){
+	public function lock($tableName, $values, $criteria)
+	{
+		$set = $this->buildSetClause($values);
+		$where = $this->buildWhereClause($criteria);
+		
+		// Lock the row
+		$sqlQuery = "SELECT * FROM ".$tableName." WHERE ".$where." FOR UPDATE";
+		
+		$stm = $this->database->prepare($sqlQuery);
+		
+		$parameterIndex = 1;
+		// Bind where values
+		foreach($criteria as $fieldName => &$value){
+			$stm->bindParam($parameterIndex, $value);
+			$parameterIndex++;
+		}
+		
+		return $stm->execute();
+	}
+	
+	public function update($tableName, $values, $criteria)
+	{
 		
 		$set = $this->buildSetClause($values);
 		$where = $this->buildWhereClause($criteria);
@@ -252,13 +273,8 @@ class EntityManager
 			$stm->bindParam($parameterIndex, $value);
 			$parameterIndex++;
 		}
-		
-		$stm->execute();
-		
-		if($stm->rowCount() > 0)
-			return true;
 			
-		return false;
+		return $stm->execute();
 	}
 	
 	public function remove($tableName, $criteria)
@@ -277,15 +293,11 @@ class EntityManager
 			$parameterIndex++;
 		}
 		
-		$stm->execute();
-		
-		if($stm->rowCount() > 0)
-			return true;
-			
-		return false;
+		return $stm->execute();
 	}
 	
-	public function create($tableName, $values){
+	public function create($tableName, $values)
+	{
 		$insert = $this->buildInsertClause($values);
 		
 		$sqlQuery = "INSERT INTO ".$tableName."  ".$insert;
@@ -310,6 +322,68 @@ class EntityManager
 		{
 			return -1;
 		}
+	}
+	
+	public function createMany($tableName, $keys, $values)
+	{	
+		$fieldNames = implode(", ", $keys);
+		
+		$sqlQuery = "INSERT INTO ".$tableName." ";
+		$sqlQuery .= "(".$fieldNames.") VALUES ";
+		
+		$valuesString = "";
+		$valueIndex = 1;
+		$valueCount = count($values);
+		
+		foreach($values as $value)
+		{
+			$valuesString .= "(";
+			
+			$keyIndex = 1;
+			$keyCount = count($keys);
+			
+			foreach($keys as $key)
+			{
+				//$valuesString .= $value[$key];
+				$valuesString .= "?";
+				
+				if($keyIndex < $keyCount)
+					$valuesString .= ", ";
+				
+				$keyIndex++;
+			}
+			
+			if($valueIndex < $valueCount)
+				$valuesString .= "), ";
+			else if($valueIndex == $valueCount)
+				$valuesString .= ");";
+				
+			$valueIndex++;
+		}
+		
+		$sqlQuery .= $valuesString;
+		
+		$stm = $this->database->prepare($sqlQuery);
+
+		// Bind values
+		$parameterIndex = 1;
+		foreach($values as $value)
+		{			
+			foreach($keys as $key)
+			{
+				$stm->bindParam($parameterIndex, $value[$key]);
+				$parameterIndex++;
+			}
+		}
+		
+		$stm->execute();
+		
+		if($stm->rowCount() > 0)
+		{
+			return true;	
+		}
+		
+		return false;
 	}
 	
 	// Query building
