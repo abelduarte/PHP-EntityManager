@@ -1,47 +1,94 @@
-<?php 
+<?php
 
+/**
+ * Class EntityManager
+ */
 class EntityManager
-{	
+{
+	/**
+	 * @var PDO
+     */
 	protected $database;
-	
+
+	/**
+	 * EntityManager constructor.
+	 * @param $database
+     */
 	function __construct($database)
 	{
 		$this->database = $database;
 		$this->sqlStatement = null;
 	}
-	
-	function errorCode(){
+
+	/**
+	 * @return mixed
+     */
+	function errorCode()
+	{
 		return $this->database->errorCode;
 	}
-	
-	function errorInfo(){
+
+	/**
+	 * @return mixed
+     */
+	function errorInfo()
+	{
 		return $this->database->errorInfo;
 	}
-	
-	function lastInsertId(){
+
+	/**
+	 * @return mixed
+     */
+	function lastInsertId()
+	{
 		return $this->database->lastInsertId;
 	}
-	
-	function beginTransaction(){
+
+	/**
+	 *
+     */
+	function beginTransaction()
+	{
 		$this->database->beginTransaction();
 	}
-	
-	function inTransaction(){
+
+	/**
+	 * @return mixed
+     */
+	function inTransaction()
+	{
 		return $this->database->inTransaction();
 	}
-	
-	function commit(){
+
+	/**
+	 *
+     */
+	function commit()
+	{
 		$this->database->commit();
 	}
-	
-	function rollback(){
+
+	/**
+	 *
+     */
+	function rollback()
+	{
 		$this->database->rollback();
 	}
-	
-	function prepare($sqlQuery){
+
+	/**
+	 * @param $sqlQuery
+	 * @return mixed
+     */
+	function prepare($sqlQuery)
+	{
 		return $this->database->prepare($sqlQuery);
 	}
-	
+
+	/**
+	 * @param $entity
+	 * @param $tableName
+     */
 	public function load($entity, $tableName)
 	{
 		$primaryKey = $entity->getPrimaryKey();
@@ -72,13 +119,24 @@ class EntityManager
 			$entity->setPrimaryKey($entity->object->$primaryKeyName);
 		}
 	}
-	
+
+	/**
+	 * @param null $tableName
+	 * @param string $entityClass
+	 * @return Entity
+     */
 	public function createManagedEntity($tableName = null, $entityClass = "Entity")
 	{
 		$entity = new $entityClass($this, $tableName);
 		return $entity;
 	}
-	
+
+	/**
+	 * @param $pk
+	 * @param null $tableName
+	 * @param string $entityClass
+	 * @return Entity
+     */
 	public function getReference($pk, $tableName = null, $entityClass = "Entity")
 	{	
 		$entity = new $entityClass($this, $tableName);
@@ -86,7 +144,13 @@ class EntityManager
 		$entity->setPrimaryKey($pk);
 		return $entity;
 	}
-	
+
+	/**
+	 * @param $tableName
+	 * @param $criteria
+	 * @param string $entityClass
+	 * @return Entity
+     */
 	public function findOne($tableName, $criteria, $entityClass = "Entity")
 	{	
 		$where = $this->buildWhereClause($criteria);
@@ -124,7 +188,15 @@ class EntityManager
 		
 		return null;
 	}
-	
+
+	/**
+	 * @param $tableName
+	 * @param $criteria
+	 * @param $offset
+	 * @param $limit
+	 * @param string $entityClass
+	 * @return array
+     */
 	public function findBy($tableName, $criteria, $offset, $limit, $entityClass = "Entity")
 	{	
 		$where = $this->buildWhereClause($criteria);
@@ -162,7 +234,15 @@ class EntityManager
 		
 		return array();
 	}
-	
+
+	/**
+	 * @param null $tableName
+	 * @param null $criteria
+	 * @param int $offset
+	 * @param int $count
+	 * @param string $entityClass
+	 * @return array
+     */
 	public function findAll($tableName = null, $criteria = null, $offset = 0, $count = 100, $entityClass = "Entity")
 	{	
 		$sqlQuery = "SELECT * FROM ".$tableName;
@@ -210,13 +290,22 @@ class EntityManager
 		
 		return array();
 	}
-	
+
+	/**
+	 * @param $sqlQuery
+	 * @return EntityQuery
+     */
 	public function createQuery($sqlQuery)
 	{
 		$sqlStatement = $this->database->prepare($sqlQuery);
 		return new EntityQuery($sqlStatement);
 	}
-	
+
+	/**
+	 * @param $tableName
+	 * @param $criteria
+	 * @return mixed
+     */
 	public function lock($tableName, $criteria)
 	{
 		$where = $this->buildWhereClause($criteria);
@@ -228,14 +317,21 @@ class EntityManager
 		
 		$parameterIndex = 1;
 		// Bind where values
-		foreach($criteria as $fieldName => &$value){
+		foreach($criteria as $fieldName => &$value)
+		{
 			$stm->bindParam($parameterIndex, $value);
 			$parameterIndex++;
 		}
 		
 		return $stm->execute();
 	}
-	
+
+	/**
+	 * @param $tableName
+	 * @param $values
+	 * @param $criteria
+	 * @return mixed
+     */
 	public function update($tableName, $values, $criteria)
 	{
 		
@@ -275,7 +371,12 @@ class EntityManager
 			
 		return $stm->execute();
 	}
-	
+
+	/**
+	 * @param $tableName
+	 * @param $criteria
+	 * @return mixed
+     */
 	public function remove($tableName, $criteria)
 	{
 		$where = $this->buildWhereClause($criteria);
@@ -294,7 +395,12 @@ class EntityManager
 		
 		return $stm->execute();
 	}
-	
+
+	/**
+	 * @param $tableName
+	 * @param $values
+	 * @return int
+     */
 	public function create($tableName, $values)
 	{
 		$insert = $this->buildInsertClause($values);
@@ -322,7 +428,13 @@ class EntityManager
 			return -1;
 		}
 	}
-	
+
+	/**
+	 * @param $tableName
+	 * @param $keys
+	 * @param $values
+	 * @return bool
+     */
 	public function createMany($tableName, $keys, $values)
 	{	
 		$fieldNames = implode(", ", $keys);
@@ -386,7 +498,11 @@ class EntityManager
 	}
 	
 	// Query building
-	
+
+	/**
+	 * @param $criteria
+	 * @return string
+     */
 	public function buildWhereClause($criteria)
 	{
 		$where = "";
@@ -407,7 +523,11 @@ class EntityManager
 		
 		return $where;
 	}
-	
+
+	/**
+	 * @param $values
+	 * @return string
+     */
 	public function buildSetClause($values){
 		
 		$set = "";
@@ -428,7 +548,11 @@ class EntityManager
 		
 		return $set;	
 	}
-	
+
+	/**
+	 * @param $values
+	 * @return string
+     */
 	public function buildInsertClause($values){
 		$insert = "";
 		$isFirst = true;

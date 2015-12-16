@@ -1,20 +1,40 @@
-<?php 
+<?php
 
+/**
+ * Class EntityQuery
+ */
 class EntityQuery
-{	
+{
+	/**
+	 * @var
+     */
 	protected $sqlStatement;
+	/**
+	 * @var
+     */
 	protected $params;
 
+	/**
+	 * EntityQuery constructor.
+	 * @param $statement
+     */
 	function __construct($statement)
 	{
 		$this->sqlStatement = $statement;
 	}
 
+	/**
+	 * @param $params
+     */
 	public function bindParams($params)
 	{
 		$this->params = $params;
 	}
 
+	/**
+	 * @param $entityClass
+	 * @return array
+     */
 	public function getResultList($entityClass)
 	{
 		$this->sqlStatement->execute($this->params);
