@@ -6,11 +6,11 @@
 class EntityQuery
 {
 	/**
-	 * @var
+	 * @var PDOStatement
      */
 	protected $sqlStatement;
 	/**
-	 * @var
+	 * @var array
      */
 	protected $params;
 
@@ -24,7 +24,7 @@ class EntityQuery
 	}
 
 	/**
-	 * @param $params
+	 * @param array $params
      */
 	public function bindParams($params)
 	{
@@ -46,6 +46,7 @@ class EntityQuery
 			$rows = $this->sqlStatement->fetchAll();
 			foreach($rows as $row)
 			{
+				/** @var Entity $entity */
 				$entity = new $entityClass($this);
 				$entity->init($row);
 				

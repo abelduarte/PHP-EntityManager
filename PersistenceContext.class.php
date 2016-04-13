@@ -15,11 +15,41 @@ class PersistenceContext
 	public $entityManager;
 
 	/**
+	 * @var string
+     */
+	protected $engine;
+	/**
+	 * @var string
+     */
+	protected $host;
+	/**
+	 * @var string
+     */
+	protected $charset;
+	/**
+	 * @var string
+     */
+	protected $database;
+	/**
+	 * @var string
+     */
+	protected $user;
+	/**
+	 * @var string
+     */
+	protected $pass;
+
+	/**
+	 * @var bool
+     */
+	protected $connected;
+
+	/**
 	 * PersistenceContext constructor.
-	 * @param $host
-	 * @param $database
-	 * @param $username
-	 * @param $password
+	 * @param string $host
+	 * @param string $database
+	 * @param string $username
+	 * @param string $password
 	 * @param string $engine
 	 * @param string $charset
      */
@@ -31,13 +61,22 @@ class PersistenceContext
 		$this->database = $database;
 		$this->user = $username;
 		$this->pass = $password;
+		$this->connected = false;
 
 		$dns = $this->engine.':dbname='.$this->database.";host=".$this->host.";charset=".$this->charset;
 
-		$this->pdo = new PDO($dns, $this->user, $this->pass);
-		$this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-		
-		$this->entityManager = new EntityManager($this->pdo);
+		try
+		{
+			$this->pdo = new PDO($dns, $this->user, $this->pass);
+			$this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+			$this->entityManager = new EntityManager($this->pdo);
+			$this->connected = true;
+		}
+		catch(Exception $exception)
+		{
+			$this->entityManager = null;
+			$this->connected = false;
+		}
 	}
 
 	/**
@@ -46,6 +85,14 @@ class PersistenceContext
 	public function entityManager()
 	{
 		return $this->entityManager;
+	}
+
+	/**
+	 * @return bool
+     */
+	public function isConnected()
+	{
+		return $this->connected;
 	}
 }
 

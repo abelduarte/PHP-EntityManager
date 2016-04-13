@@ -51,6 +51,8 @@ class Entity
 	            return $this->object->$property;
             }
         }
+
+	   return null;
     }
 
 	/**
@@ -66,15 +68,16 @@ class Entity
     }
 
 	/**
-	 * @param $entityManager
+	 * @param EntityManager $entityManager
      */
 	public function setEntityManager($entityManager)
 	{
 		$this->entityManager = $entityManager;
 	}
 
+
 	/**
-	 * @param $primaryKey
+	 * @param string $primaryKey
      */
 	public function setPrimaryKey($primaryKey)
 	{
@@ -84,7 +87,7 @@ class Entity
 	}
 
 	/**
-	 * @return mixed
+	 * @return string
      */
 	public function getPrimaryKey()
 	{
@@ -92,7 +95,7 @@ class Entity
 	}
 
 	/**
-	 * @param $primaryKeyName
+	 * @param string $primaryKeyName
      */
 	public function setPrimaryKeyName($primaryKeyName)
 	{
@@ -108,7 +111,7 @@ class Entity
 	}
 
 	/**
-	 * @param $tableName
+	 * @param string $tableName
      */
 	public function setTableName($tableName)
 	{
@@ -116,7 +119,7 @@ class Entity
 	}
 
 	/**
-	 * @return mixed
+	 * @return string
      */
 	public function getTableName()
 	{
